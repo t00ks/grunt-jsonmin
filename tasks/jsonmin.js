@@ -35,11 +35,11 @@ module.exports = function(grunt) {
       }).map ( function( fileSrc ) {
         // Read the source file
         return grunt.file.read( fileSrc );
-      })
+      });
       
       var multiFile = src.length > 1;
       
-      src = src..join( grunt.util.normalizelf( ', ' ) );
+      src = src.join( grunt.util.normalizelf( ', ' ) );
 
       // minify the source files
       if(multiFile) {
