@@ -35,10 +35,18 @@ module.exports = function(grunt) {
       }).map ( function( fileSrc ) {
         // Read the source file
         return grunt.file.read( fileSrc );
-      }).join( grunt.util.normalizelf( ', ' ) );
+      })
+      
+      var multiFile = src.length > 1;
+      
+      src = src..join( grunt.util.normalizelf( ', ' ) );
 
       // minify the source files
-      src = require( './lib/json-minify/minify.json.js' ).JSON.minify( src );
+      if(multiFile) {
+      	src = '[' + require( './lib/json-minify/minify.json.js' ).JSON.minify( src ) + ']';
+      } else {
+      	src = require( './lib/json-minify/minify.json.js' ).JSON.minify( src );
+      }
 
       // write to the output file
       grunt.file.write( file.dest, src );
