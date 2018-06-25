@@ -1,63 +1,48 @@
 /*
- * grunt-jsonmin
- * https://github.com/mattstyles/grunt-jsonmin
- *
  * a grunt task wrapper for JSON.minify
  * https://github.com/getify/JSON.minify
  *
- * Copyright (c) 2013 Matt Styles
- * Licensed under the MIT license.
+ * Custom code to minify cldr json files into seperate language.json files 
+ * 
+ * 
  */
 
 'use strict';
 
-module.exports = function(grunt) {
+module.exports = function (grunt) {
 
-  grunt.registerMultiTask('jsonmin', 'A grunt task wrapper for getify/JSON.minify', function() {
+    grunt.registerMultiTask('jsonmin', 'A grunt task wrapper for getify/JSON.minify', function () {
 
-    // Get the task options
-    // @todo actually do something with these options
-    var options = {
-      stripWhitespace   : this.options.stripWhitespace || true,
-      stripComments     : this.options.stripComments || true
-    };
+        // Get the task options
+        var options = {
+            supplementalFiles: this.options.supplementalFiles || 'content/cldr/supplemental',
+            languageFiles: this.options.languageFiles || 'content/cldr/main',
+            destinationPath: this.options.destinationPath || 'content/cldr/min'
+        };
 
-    // Minify and output
-    this.files.forEach( function( file ) {
-      // Concat the files array
-      var src = file.src.filter( function( fileSrc ) {
-        if ( !grunt.file.exists( fileSrc ) ) {
-          grunt.log.warn( 'Source file "' + fileSrc + '" not found.' );
-          return false;
-        } else {
-          return true;
+        var supplemental = [];
+        grunt.file.recurse(options.supplementalFiles, function (abspath, rootdir, subdir, filename) {
+            supplemental.push(grunt.file.read(abspath));
+        });
+
+        var languages = {}
+        grunt.file.recurse(options.languageFiles, function (abspath, rootdir, subdir, filename) {
+            if (!languages[subdir]) {
+                languages[subdir] = [];
+            }
+            languages[subdir].push(grunt.file.read(abspath));
+        });
+
+        for (var lang in languages) {
+            var files = languages[lang];
+            var src = supplemental.concat(files).join(grunt.util.normalizelf(', '))
+            src = '[' + require('./lib/json-minify/minify.json.js').JSON.minify(src) + ']'
+            grunt.file.write(options.destinationPath + '/' + lang + '.json', src);
+            // user feedback
+            grunt.log.writeln('"' + options.destinationPath + '/' + lang + '.json" created.');
         }
-      }).map ( function( fileSrc ) {
-        // Read the source file
-        return grunt.file.read( fileSrc );
-      });
-      
-      var multiFile = src.length > 1;
-      
-      src = src.join( grunt.util.normalizelf( ', ' ) );
 
-      // minify the source files
-      if(multiFile) {
-      	src = '[' + require( './lib/json-minify/minify.json.js' ).JSON.minify( src ) + ']';
-      } else {
-      	src = require( './lib/json-minify/minify.json.js' ).JSON.minify( src );
-      }
-
-      // write to the output file
-      grunt.file.write( file.dest, src );
-
-      // user feedback
-      grunt.log.writeln('"' + file.dest + '" created.');
-
+        grunt.log.writeln('✔'.magenta + ' grunt-jsonmin completed successfully');
     });
-
-    // Write out success message
-	grunt.log.writeln( '✔'.magenta + ' grunt-jsonmin completed successfully' );
-  });
 
 };
